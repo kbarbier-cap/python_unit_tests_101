@@ -1,7 +1,9 @@
+import numpy as np
 import pandas as pd
 
 from python_unit_tests_101.pipelines import (
-    PreprocessingPipeline
+    PreprocessingPipeline,
+    FeaturesEngineeringPipeline
 )
 
 
@@ -67,3 +69,45 @@ class TestPreprocessingPipeline:
             df_expected,
             check_dtype=False
         )
+
+class TestFeaturesEngineeringPipeline:
+
+    @classmethod
+    def setup_class(cls):
+        """Look at this doc to know how it works
+        https://docs.pytest.org/en/6.2.x/xunit_setup.html
+        """
+        cls.df_input = pd.DataFrame([
+            [2, 20, 200],
+            [5, 16, 160],
+            [10, 45, 450],
+        ], columns=["col1", "col2", "col3"])
+
+    def test_create_lag_features(self):
+        df_input = self.df_input
+
+        df_output = FeaturesEngineeringPipeline.create_lag_features(df_input)
+
+        df_expected = pd.DataFrame([
+            [2, 20, 200, np.NaN, np.NaN, 160],
+            [5, 16, 160, 2, np.NaN, 450],
+            [10, 45, 450, 5, np.NaN, np.NaN],
+        ], columns=["col1", "col2", "col3", "lag_col1", "lag_col2", "lag_col3"])
+
+        pd.testing.assert_frame_equal(df_output, df_expected)
+
+    def test_create_cross_features(self):
+        df_input = self.df_input
+
+        df_output = (
+            FeaturesEngineeringPipeline(paramA=2)
+            .create_cross_features(df_input)
+        )
+
+        df_expected = pd.DataFrame([
+            [4, 20, 200, 80, 800],
+            [10, 16, 160, 160, 1600],
+            [20, 45, 450, 900, 9000],
+        ], columns=["col1", "col2", "col3", "cross_col1_col2", "cross_col1_col3"])
+
+        pd.testing.assert_frame_equal(df_output, df_expected)
